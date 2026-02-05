@@ -1,5 +1,6 @@
 package com.union.demo.config;
 
+import com.union.demo.global.common.ApiErrorResponse;
 import com.union.demo.jwt.JWTFilter;
 import com.union.demo.jwt.JWTUtil;
 import com.union.demo.jwt.LoginFilter;
@@ -9,6 +10,7 @@ import com.union.demo.service.RefreshTokenService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -20,6 +22,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.security.web.authentication.logout.LogoutFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
+import tools.jackson.databind.ObjectMapper;
 
 import java.util.Collections;
 
@@ -32,6 +35,7 @@ import java.util.Collections;
 public class SecurityConfig {
     private final AuthenticationConfiguration authenticationConfiguration;
     private final JWTUtil jwtUtil;
+    private final ObjectMapper objectMapper;
 
     //Spring Security 내의 AuthenticationManager를 bean으로 등록
     //로그인 할 때 사용자의 인증(authentication)을 담당합니다.
@@ -74,15 +78,49 @@ public class SecurityConfig {
                 .formLogin(form -> form.disable())// security 자체 기본 로그인 폼 비활성화
                 .httpBasic(httpBasic -> httpBasic.disable())//jwt 사용하니까 http basic 인증 비활성화
 
+                //401, 403 공통 json 응답
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            response.setStatus(HttpStatus.UNAUTHORIZED.value());
+                            response.setContentType("application/json;charset=UTF-8");
+
+                            ApiErrorResponse body = ApiErrorResponse.builder()
+                                    .status(HttpStatus.UNAUTHORIZED.value())
+                                    .code("AUTH_401")
+                                    .message("로그인이 필요합니다.")
+                                    .build();
+
+                            response.getWriter().write(objectMapper.writeValueAsString(body));
+                        })
+                        .accessDeniedHandler((request, response, accessDeniedException) -> {
+                            response.setStatus(HttpStatus.FORBIDDEN.value());
+                            response.setContentType("application/json;charset=UTF-8");
+
+                            ApiErrorResponse body = ApiErrorResponse.builder()
+                                    .status(HttpStatus.FORBIDDEN.value())
+                                    .code("AUTH_403")
+                                    .message("접근 권한이 없습니다.")
+                                    .build();
+
+                            response.getWriter().write(objectMapper.writeValueAsString(body));
+                        })
+                )
+
+
                 //엔드포인트별 접근 권한 설정
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/refresh","/api/auth/login","/api/members","/api/posts","/api/auth/signup","/api/auth/logout").permitAll() //누구나 접근 가능
+                        .requestMatchers(
+                                "/api/auth/refresh",
+                                "/api/auth/login",
+                                "/api/members",
+                                "/api/posts",
+                                "/api/auth/signup",
+                                "/api/auth/logout"
+                        ).permitAll() //누구나 접근 가능
                         .anyRequest().authenticated())//그 이외의 요청은 인증된 사용자만 접근이 가능
 
                 .addFilterAt(loginFilter, UsernamePasswordAuthenticationFilter.class)
-
                 .addFilterBefore(new JWTFilter(jwtUtil), LoginFilter.class)
-
                 //세션 사용 x -> 세션 비활성화
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 

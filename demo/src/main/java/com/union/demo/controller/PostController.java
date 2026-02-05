@@ -1,5 +1,6 @@
 package com.union.demo.controller;
 
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -7,6 +8,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/posts")
 public class PostController {
     //1. 전체 공고 목록 가져오기 "/api/posts"
+
 
 
     //2. 공고 필터 기능 "/api/posts?roles=developer"

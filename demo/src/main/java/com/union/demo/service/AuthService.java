@@ -15,6 +15,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.NoSuchElementException;
+
 //jwt 기준
 @Service
 @RequiredArgsConstructor
@@ -23,7 +25,6 @@ public class AuthService {
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
     private final RoleRepository roleRepository;
-    private final RefreshTokenService refreshTokenService;
     private final RefreshTokenRepository refreshTokenRepository;
     private final ProfileRepository profileRepository;
 
@@ -45,27 +46,28 @@ public class AuthService {
         return saved;
     }
 
-    //loginId 중복체크
+    //loginId 중복체크 409 error
     private void validationDuplicateLoginId(String loginId){
         if(userRepository.existsByLoginId(loginId)){
             log.warn("중복된 loginId입니다. {}", loginId);
-            throw new IllegalArgumentException("이미 사용중인 아이디입니다.");
+            throw new IllegalStateException("이미 사용중인 아이디입니다.");
         }
     }
 
-    //username 중복 체크
+    //username 중복 체크 409 error
     private void validationDuplicateUsername(String username){
         if(userRepository.existsByUsername(username)){
-            log.warn("중복된 아이디 입니다: {}", username);
-            throw new IllegalArgumentException("이미 사용중인 이름입니다.");
+            log.warn("중복된 username 입니다: {}", username);
+            throw new IllegalStateException("이미 사용중인 이름입니다.");
         }
     }
 
     // users 정보 저장: user entity 생성(비밀번호 암호화 적용)
     private Users createUserEntity(SignupReqDto signupReqDto){
 
+        //존재하지 않는 roleId -> 404
         Role mainRole=roleRepository.findByRoleId(signupReqDto.getMainRoleId())
-                .orElseThrow((()-> new IllegalArgumentException("존재하지 않는 roleId.")));
+                .orElseThrow((()-> new NoSuchElementException("존재하지 않는 roleId 입니다.")));
 
         return Users.builder()
                 .loginId(signupReqDto.getLoginId())
