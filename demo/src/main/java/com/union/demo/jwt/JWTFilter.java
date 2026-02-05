@@ -45,7 +45,7 @@ public class JWTFilter extends OncePerRequestFilter {
         String token=authorization.substring(7);
 
         try{
-            //만료가 되었는지 확ㄷ인
+            //만료가 되었는지 확인
             if(jwtUtil.isExpired(token)){
                 res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                 res.setContentType("application/json");

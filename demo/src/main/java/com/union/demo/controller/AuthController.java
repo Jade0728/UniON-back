@@ -14,6 +14,7 @@ import com.union.demo.utill.CookieUtil;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -45,7 +46,7 @@ public class AuthController {
 
     //1. 회원가입 "/api/auth/signup"
     @PostMapping("/signup")
-    public ResponseEntity<ApiResponse<SignupResDto>> signUp(@RequestBody SignupReqDto signupReqDto){
+    public ResponseEntity<ApiResponse<SignupResDto>> signUp(@RequestBody @Valid SignupReqDto signupReqDto){
         Users savedUser=authService.signUp(signupReqDto);
         Long userId=savedUser.getUserId();
         String loginId=savedUser.getLoginId();
@@ -63,7 +64,7 @@ public class AuthController {
 
     //2. 로그인 "/api/auth/login"
     @PostMapping("/login")
-    public ResponseEntity <ApiResponse<LoginResDto>> login(@RequestBody LoginReqDto loginReqDto){
+    public ResponseEntity <ApiResponse<LoginResDto>> login(@RequestBody @Valid LoginReqDto loginReqDto){
         //아이디 비번 검증
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
